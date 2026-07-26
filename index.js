@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const {
     Client,
     GatewayIntentBits,
@@ -383,4 +385,5 @@ Bạn có chắc muốn mua role này không?`,
 });
 
 
-client.login("process.env.TOKEN");
+console.log("TOKEN:", process.env.TOKEN);
+client.login(process.env.TOKEN);
