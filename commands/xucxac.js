@@ -1,98 +1,87 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("xucxac")
-        .setDescription("Bắt đầu một ván xúc xắc"),
+        .setName("give")
+        .setDescription("Cho xu cho người khác")
+        .addUserOption(option =>
+            option
+                .setName("user")
+                .setDescription("Người nhận xu")
+                .setRequired(true)
+        )
+        .addIntegerOption(option =>
+            option
+                .setName("amount")
+                .setDescription("Số xu muốn cho")
+                .setRequired(true)
+        ),
 
     async execute(interaction) {
-        const file = path.join(__dirname, "..", "games", "xucxac.json");
 
-        let game = {};
+        const file = path.join(__dirname, "..", "data", "users.json");
 
-        if (fs.existsSync(file)) {
-            game = JSON.parse(fs.readFileSync(file, "utf8"));
-        }
+        const users = JSON.parse(
+            fs.readFileSync(file, "utf8")
+        );
 
-        if (game.active) {
+        const giver = interaction.user.id;
+        const receiver = interaction.options.getUser("user");
+        const amount = interaction.options.getInteger("amount");
+
+
+        if (receiver.id === giver) {
             return interaction.reply({
-                content: "🎲 Đang có một ván xúc xắc diễn ra!",
+                content: "❌ Không thể tự give xu cho chính mình!",
                 ephemeral: true
             });
         }
 
-        game = {
-            active: true,
-            players: {},
-            start: Date.now()
-        };
 
-        fs.writeFileSync(file, JSON.stringify(game, null, 4));
+        if (amount <= 0) {
+            return interaction.reply({
+                content: "❌ Số xu phải lớn hơn 0!",
+                ephemeral: true
+            });
+        }
 
-        const embed = new EmbedBuilder()
-            .setColor("Blue")
-            .setTitle("🎲 Xúc xắc bắt đầu!")
-            .setDescription(
-                "⏰ Thời gian: **60 giây**\n\n" +
-                "Dùng `/lac` để tham gia!\n" +
-                "Mỗi người chỉ được lắc **1 lần**."
-            );
 
-        await interaction.reply({
-            embeds: [embed]
-        });
+        if (!users[giver]) {
+            users[giver] = { coins: 0 };
+        }
 
-        setTimeout(async () => {
-            let data = JSON.parse(fs.readFileSync(file, "utf8"));
+        if (!users[receiver.id]) {
+            users[receiver.id] = { coins: 0 };
+        }
 
-            if (!data.active) return;
 
-            const players = Object.entries(data.players);
+        if (users[giver].coins < amount) {
+            return interaction.reply({
+                content: "❌ Bạn không đủ xu để cho!",
+                ephemeral: true
+            });
+        }
 
-            if (players.length === 0) {
-                await interaction.followUp("❌ Không có ai tham gia!");
-            } else {
-                let winner = players[0];
 
-                for (const player of players) {
-                    if (player[1] > winner[1]) {
-                        winner = player;
-                    }
-                }
+        users[giver].coins -= amount;
+        users[receiver.id].coins += amount;
 
-                const usersFile = path.join(__dirname, "..", "data", "users.json");
 
-let users = {};
+        fs.writeFileSync(
+            file,
+            JSON.stringify(users, null, 4)
+        );
 
-if (fs.existsSync(usersFile)) {
-    users = JSON.parse(fs.readFileSync(usersFile, "utf8"));
-}
 
-const winnerId = winner[0];
+        return interaction.reply(
+`💸 **GIVE XU THÀNH CÔNG**
 
-if (!users[winnerId]) {
-    users[winnerId] = {
-        coins: 0
-    };
-}
+👤 Người gửi: ${interaction.user}
+🎁 Người nhận: ${receiver}
 
-users[winnerId].coins += 500;
-
-fs.writeFileSync(
-    usersFile,
-    JSON.stringify(users, null, 4)
-);
-
-await interaction.followUp(
-    `🏆 Người thắng: <@${winnerId}>\n🎲 Điểm: **${winner[1]}**\n💰 Nhận **+500 xu**!`
-);
-            }
-
-            data.active = false;
-            fs.writeFileSync(file, JSON.stringify(data, null, 4));
-
-        }, 60000);
+💰 Số xu: **${amount.toLocaleString()} xu**`
+        );
     }
 };

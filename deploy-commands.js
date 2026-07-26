@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { REST, Routes } = require("discord.js");
 const commands = [
     {
@@ -24,13 +25,31 @@ const commands = [
         name: "shop",
         description: "Gửi cửa hàng role",
 },
+{
+    name: "give",
+    description: "Cho xu cho người khác",
+    options: [
+        {
+            name: "user",
+            description: "Người nhận xu",
+            type: 6,
+            required: true
+        },
+        {
+            name: "amount",
+            description: "Số xu muốn cho",
+            type: 4,
+            required: true
+        }
+    ]
+},
 ];
 
 const token = process.env.TOKEN;
 const CLIENT_ID = "1530151913184690208";
 const GUILD_ID = "1529145028260135106";
 
-const rest = new REST({ version: "10" }).setToken(TOKEN);
+const rest = new REST({ version: "10" }).setToken(token);
 
 (async () => {
     try {
