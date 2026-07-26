@@ -1,87 +1,65 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("give")
-        .setDescription("Cho xu cho người khác")
-        .addUserOption(option =>
-            option
-                .setName("user")
-                .setDescription("Người nhận xu")
-                .setRequired(true)
-        )
-        .addIntegerOption(option =>
-            option
-                .setName("amount")
-                .setDescription("Số xu muốn cho")
-                .setRequired(true)
-        ),
+        .setName("xucxac")
+        .setDescription("Bắt đầu một ván xúc xắc"),
 
     async execute(interaction) {
 
-        const file = path.join(__dirname, "..", "data", "users.json");
+        const file = path.join(__dirname, "..", "games", "xucxac.json");
 
-        const users = JSON.parse(
-            fs.readFileSync(file, "utf8")
-        );
+        let game = {};
 
-        const giver = interaction.user.id;
-        const receiver = interaction.options.getUser("user");
-        const amount = interaction.options.getInteger("amount");
+        if (fs.existsSync(file)) {
+            game = JSON.parse(fs.readFileSync(file, "utf8"));
+        }
 
 
-        if (receiver.id === giver) {
+        if (game.active) {
             return interaction.reply({
-                content: "❌ Không thể tự give xu cho chính mình!",
+                content: "🎲 Đang có một ván xúc xắc diễn ra!",
                 ephemeral: true
             });
         }
 
 
-        if (amount <= 0) {
-            return interaction.reply({
-                content: "❌ Số xu phải lớn hơn 0!",
-                ephemeral: true
-            });
-        }
-
-
-        if (!users[giver]) {
-            users[giver] = { coins: 0 };
-        }
-
-        if (!users[receiver.id]) {
-            users[receiver.id] = { coins: 0 };
-        }
-
-
-        if (users[giver].coins < amount) {
-            return interaction.reply({
-                content: "❌ Bạn không đủ xu để cho!",
-                ephemeral: true
-            });
-        }
-
-
-        users[giver].coins -= amount;
-        users[receiver.id].coins += amount;
+        game = {
+            active: true,
+            owner: interaction.user.id,
+            players: [
+                {
+                    id: interaction.user.id,
+                    name: interaction.user.username
+                }
+            ]
+        };
 
 
         fs.writeFileSync(
             file,
-            JSON.stringify(users, null, 4)
+            JSON.stringify(game, null, 4)
         );
 
 
-        return interaction.reply(
-`💸 **GIVE XU THÀNH CÔNG**
+        const embed = new EmbedBuilder()
+            .setTitle("🎲 XÚC XẮC")
+            .setDescription(
+`Một ván xúc xắc đã bắt đầu!
 
-👤 Người gửi: ${interaction.user}
-🎁 Người nhận: ${receiver}
+👑 Người tạo: ${interaction.user}
 
-💰 Số xu: **${amount.toLocaleString()} xu**`
-        );
+Dùng:
+\`/lac\` để lắc xúc xắc`
+            )
+            .setColor("Blue");
+
+
+        await interaction.reply({
+            embeds: [embed]
+        });
+
     }
 };
