@@ -1,4 +1,6 @@
 require("dotenv").config();
+const express = require("express");
+const app = express();
 
 const {
     Client,
@@ -385,5 +387,16 @@ Bạn có chắc muốn mua role này không?`,
 });
 
 
-console.log("TOKEN:", process.env.TOKEN);
+console.log("Bot đang khởi động...");
+
 client.login(process.env.TOKEN);
+
+app.get("/", (req, res) => {
+    res.send("PreBot is running!");
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Web server đang chạy ở cổng ${PORT}`);
+});
