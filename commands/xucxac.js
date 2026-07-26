@@ -8,7 +8,6 @@ module.exports = {
         .setDescription("Bắt đầu một ván xúc xắc"),
 
     async execute(interaction) {
-
         const file = path.join(__dirname, "..", "games", "xucxac.json");
 
         let game = {};
@@ -17,7 +16,6 @@ module.exports = {
             game = JSON.parse(fs.readFileSync(file, "utf8"));
         }
 
-
         if (game.active) {
             return interaction.reply({
                 content: "🎲 Đang có một ván xúc xắc diễn ra!",
@@ -25,41 +23,53 @@ module.exports = {
             });
         }
 
-
         game = {
             active: true,
-            owner: interaction.user.id,
-            players: [
-                {
-                    id: interaction.user.id,
-                    name: interaction.user.username
-                }
-            ]
+            players: {},
+            start: Date.now()
         };
 
-
-        fs.writeFileSync(
-            file,
-            JSON.stringify(game, null, 4)
-        );
-
+        fs.writeFileSync(file, JSON.stringify(game, null, 4));
 
         const embed = new EmbedBuilder()
-            .setTitle("🎲 XÚC XẮC")
+            .setColor("Blue")
+            .setTitle("🎲 Xúc xắc bắt đầu!")
             .setDescription(
-`Một ván xúc xắc đã bắt đầu!
-
-👑 Người tạo: ${interaction.user}
-
-Dùng:
-\`/lac\` để lắc xúc xắc`
-            )
-            .setColor("Blue");
-
+                "⏰ Thời gian: **60 giây**\n\n" +
+                "Dùng `/lac` để tham gia!\n" +
+                "Mỗi người chỉ được lắc **1 lần**."
+            );
 
         await interaction.reply({
             embeds: [embed]
         });
 
+        setTimeout(async () => {
+            let data = JSON.parse(fs.readFileSync(file, "utf8"));
+
+            if (!data.active) return;
+
+            const players = Object.entries(data.players);
+
+            if (players.length === 0) {
+                await interaction.followUp("❌ Không có ai tham gia!");
+            } else {
+                let winner = players[0];
+
+                for (const player of players) {
+                    if (player[1] > winner[1]) {
+                        winner = player;
+                    }
+                }
+
+                await interaction.followUp(
+                    `🏆 Người thắng: <@${winner[0]}>\n🎲 Điểm: **${winner[1]}**\n💰 Nhận **+500 xu**!`
+                );
+            }
+
+            data.active = false;
+            fs.writeFileSync(file, JSON.stringify(data, null, 4));
+
+        }, 60000);
     }
 };
