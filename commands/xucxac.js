@@ -8,13 +8,19 @@ module.exports = {
         .setDescription("Bắt đầu một ván xúc xắc"),
 
     async execute(interaction) {
+
         const file = path.join(__dirname, "..", "games", "xucxac.json");
 
-        let game = {};
+        let game = {
+            active: false
+        };
 
         if (fs.existsSync(file)) {
-            game = JSON.parse(fs.readFileSync(file, "utf8"));
+            game = JSON.parse(
+                fs.readFileSync(file, "utf8")
+            );
         }
+
 
         if (game.active) {
             return interaction.reply({
@@ -23,53 +29,69 @@ module.exports = {
             });
         }
 
+
         game = {
             active: true,
-            players: {},
-            start: Date.now()
+            owner: interaction.user.id,
+            players: [],
+            createdAt: Date.now()
         };
 
-        fs.writeFileSync(file, JSON.stringify(game, null, 4));
+
+        fs.writeFileSync(
+            file,
+            JSON.stringify(game, null, 4)
+        );
+
 
         const embed = new EmbedBuilder()
-            .setColor("Blue")
-            .setTitle("🎲 Xúc xắc bắt đầu!")
+            .setTitle("🎲 XÚC XẮC")
             .setDescription(
-                "⏰ Thời gian: **60 giây**\n\n" +
-                "Dùng `/lac` để tham gia!\n" +
-                "Mỗi người chỉ được lắc **1 lần**."
-            );
+`🎮 **Một ván xúc xắc mới đã bắt đầu!**
+
+👤 Người tạo: ${interaction.user}
+
+⏰ Thời gian tham gia: **60 giây**
+
+Dùng \`/lac\` để tham gia lắc xúc xắc!`
+            )
+            .setColor("Blue");
+
 
         await interaction.reply({
             embeds: [embed]
         });
 
-        setTimeout(async () => {
-            let data = JSON.parse(fs.readFileSync(file, "utf8"));
 
-            if (!data.active) return;
 
-            const players = Object.entries(data.players);
+        // Tự kết thúc sau 60 giây
+        setTimeout(() => {
 
-            if (players.length === 0) {
-                await interaction.followUp("❌ Không có ai tham gia!");
-            } else {
-                let winner = players[0];
+            if (!fs.existsSync(file)) return;
 
-                for (const player of players) {
-                    if (player[1] > winner[1]) {
-                        winner = player;
-                    }
-                }
 
-                await interaction.followUp(
-                    `🏆 Người thắng: <@${winner[0]}>\n🎲 Điểm: **${winner[1]}**\n💰 Nhận **+500 xu**!`
+            let current = JSON.parse(
+                fs.readFileSync(file, "utf8")
+            );
+
+
+            if (current.active) {
+
+                current.active = false;
+                current.endedAt = Date.now();
+
+
+                fs.writeFileSync(
+                    file,
+                    JSON.stringify(current, null, 4)
                 );
+
+
+                console.log("🎲 Ván xúc xắc đã kết thúc sau 60 giây");
             }
 
-            data.active = false;
-            fs.writeFileSync(file, JSON.stringify(data, null, 4));
 
         }, 60000);
+
     }
 };
