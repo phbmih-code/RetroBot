@@ -33,11 +33,9 @@ module.exports = {
 
 
         if (fs.existsSync(gameFile)) {
-
             game = JSON.parse(
                 fs.readFileSync(gameFile, "utf8")
             );
-
         }
 
 
@@ -52,12 +50,10 @@ module.exports = {
 
 
         game = {
-
             active: true,
             owner: interaction.user.id,
             players: {},
             startedAt: Date.now()
-
         };
 
 
@@ -94,27 +90,98 @@ module.exports = {
 
         setTimeout(async () => {
 
+            try {
 
-            let current = JSON.parse(
-                fs.readFileSync(gameFile, "utf8")
-            );
-
-
-            if (!current.active) return;
+                if (!fs.existsSync(gameFile)) return;
 
 
-            const players = current.players || {};
+                let current = JSON.parse(
+                    fs.readFileSync(gameFile, "utf8")
+                );
 
-            const ids = Object.keys(players);
+
+                if (!current.active) return;
+
+
+                const players = current.players || {};
+                const ids = Object.keys(players);
 
 
 
-            if (ids.length === 0) {
+                if (ids.length === 0) {
+
+                    current.active = false;
+                    current.players = {};
+
+                    fs.writeFileSync(
+                        gameFile,
+                        JSON.stringify(current, null, 4)
+                    );
+
+
+                    return interaction.channel.send(
+`⏰ **VÁN XÚC XẮC KẾT THÚC**
+
+❌ Không có ai tham gia.`
+                    );
+
+                }
+
+
+
+                const max = Math.max(
+                    ...Object.values(players)
+                );
+
+
+                const winners = ids.filter(
+                    id => players[id] === max
+                );
+
+
+
+                let users = {};
+
+                if (fs.existsSync(usersFile)) {
+
+                    users = JSON.parse(
+                        fs.readFileSync(usersFile, "utf8")
+                    );
+
+                }
+
+
+
+                const reward = Math.floor(
+                    2000 / winners.length
+                );
+
+
+
+                for (const id of winners) {
+
+                    if (!users[id]) {
+                        users[id] = {
+                            coins: 0
+                        };
+                    }
+
+
+                    users[id].coins += reward;
+
+                }
+
+
+
+                fs.writeFileSync(
+                    usersFile,
+                    JSON.stringify(users, null, 4)
+                );
+
 
 
                 current.active = false;
                 current.players = {};
-
 
                 fs.writeFileSync(
                     gameFile,
@@ -122,131 +189,66 @@ module.exports = {
                 );
 
 
-                return interaction.channel.send(
-                    "⏰ Hết thời gian!\n❌ Không có ai chơi."
-                );
 
-
-            }
-
-
-
-            let max = Math.max(
-                ...Object.values(players)
-            );
-
-
-            const winners = ids.filter(
-                id => players[id] === max
-            );
-
-
-
-            let users = {};
-
-
-            if (fs.existsSync(usersFile)) {
-
-                users = JSON.parse(
-                    fs.readFileSync(usersFile, "utf8")
-                );
-
-            }
-
-
-
-            const reward = Math.floor(
-                2000 / winners.length
-            );
-
-
-
-            for (const id of winners) {
-
-
-                if (!users[id]) {
-
-                    users[id] = {
-                        coins: 0
-                    };
-
-                }
-
-
-                users[id].coins += reward;
-
-            }
-
-
-
-            fs.writeFileSync(
-                usersFile,
-                JSON.stringify(users, null, 4)
-            );
-
-
-
-            current.active = false;
-            current.players = {};
-
-
-            fs.writeFileSync(
-                gameFile,
-                JSON.stringify(current, null, 4)
-            );
-
-
-
-            let msg =
+                let msg =
 `🎲 **VÁN XÚC XẮC KẾT THÚC**
 
-🏆 Điểm cao nhất: **${max}**
+🎯 Điểm cao nhất:
+**${max}**
 
 `;
 
 
 
-            if (winners.length === 1) {
-
-
-                msg +=
-`👑 Người thắng: <@${winners[0]}>
-💰 Nhận: **2000 xu**`;
-
-
-            } else {
-
-
-                msg +=
-`🤝 Hòa ${winners.length} người
-
-`;
-
-
-                for (const id of winners) {
+                if (winners.length === 1) {
 
                     msg +=
-`👤 <@${id}> nhận **${reward} xu**
+`👑 Người thắng:
+<@${winners[0]}>
+
+💰 Nhận:
+**2000 xu**`;
+
+                } else {
+
+                    msg +=
+`🤝 Có **${winners.length} người hòa**
+
 `;
+
+                    for (const id of winners) {
+
+                        msg +=
+`👤 <@${id}>
+💰 Nhận **${reward} xu**
+
+`;
+
+                    }
 
                 }
 
+
+
+                await interaction.channel.send(msg);
+
+
+                console.log(
+                    "🎲 Xúc xắc đã kết thúc"
+                );
+
+
+            } catch (err) {
+
+                console.error(
+                    "Lỗi kết thúc xúc xắc:",
+                    err
+                );
+
             }
-
-
-
-            await interaction.channel.send(msg)
-                .catch(console.error);
-
-
-
-            console.log(
-                "🎲 Xúc xắc đã kết thúc"
-            );
 
 
         }, 60000);
-
 
 
     }

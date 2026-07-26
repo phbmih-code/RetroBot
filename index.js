@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 const express = require("express");
 const app = express();
 
@@ -14,8 +15,15 @@ const {
 
 const fs = require("fs");
 const path = require("path");
+
+
+const boxFile = path.join(
+    __dirname,
+    "data",
+    "box.json"
+);
 const usersFile = path.join(__dirname, "data", "users.json");
-const boxFile = path.join(__dirname, "games", "box.json");
+
 
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
