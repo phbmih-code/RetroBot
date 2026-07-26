@@ -43,6 +43,10 @@ const commands = [
         }
     ]
 },
+{
+    name: "box",
+    description: "Mở hộp quà may mắn",
+},
 ];
 
 const token = process.env.TOKEN;

@@ -14,6 +14,12 @@ const {
 
 const fs = require("fs");
 const path = require("path");
+const usersFile = path.join(__dirname, "data", "users.json");
+const boxFile = path.join(__dirname, "games", "box.json");
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 
 const client = new Client({
@@ -81,13 +87,119 @@ client.on(Events.InteractionCreate, async interaction => {
 }
 
 
+ if (interaction.isButton()) {
 
     // =====================
-// BUTTON SHOP
-// =====================
+    // MỞ BOX
+    // =====================
 
-if (interaction.isButton()) {
+    if (interaction.customId.startsWith("box_")) {
+        const id = interaction.user.id;
 
+if (!fs.existsSync(boxFile)) {
+    fs.writeFileSync(boxFile, "{}");
+}
+
+let boxData = JSON.parse(fs.readFileSync(boxFile, "utf8"));
+
+const now = Date.now();
+const cooldown = 3 * 24 * 60 * 60 * 1000;
+
+if (boxData[id] && now - boxData[id] < cooldown) {
+
+    const remain = cooldown - (now - boxData[id]);
+
+    const days = Math.ceil(remain / (24 * 60 * 60 * 1000));
+
+    return interaction.reply({
+        content: `⏰ Bạn đã mở hộp rồi!\n\nCó thể mở lại sau **${days} ngày**.`,
+        ephemeral: true
+    });
+
+}
+
+await interaction.reply({
+    content:
+`📦 Đang mở hộp...
+
+🥁`,
+    ephemeral: true
+});
+
+await delay(800);
+
+await interaction.editReply({
+    content:
+`📦 Đang mở hộp...
+
+🥁
+🥁🥁`
+});
+
+await delay(800);
+
+await interaction.editReply({
+    content:
+`📦 Đang mở hộp...
+
+🥁
+🥁🥁
+🥁🥁🥁`
+});
+
+await delay(800);
+
+let users = {};
+
+if (fs.existsSync(usersFile)) {
+    users = JSON.parse(fs.readFileSync(usersFile, "utf8"));
+}
+
+if (!users[id]) users[id] = { coins: 0 };
+
+const reward = Math.floor(Math.random() * (50000 - 10000 + 1)) + 10000;
+
+users[id].coins += reward;
+
+fs.writeFileSync(usersFile, JSON.stringify(users, null, 4));
+
+boxData[id] = now;
+
+fs.writeFileSync(boxFile, JSON.stringify(boxData, null, 4));
+
+const names = {
+    box_1: "Thứ Nhất",
+    box_2: "Thứ Hai",
+    box_3: "Thứ Ba",
+    box_4: "Thứ Tư",
+    box_5: "Thứ Năm",
+    box_6: "Thứ Sáu"
+};
+
+const boxName = names[interaction.customId];
+
+await interaction.editReply({
+
+    content:
+`🎉 **MỞ HỘP THÀNH CÔNG!**
+
+🎁 Bạn đã mở:
+📦 Hộp may mắn ${boxName}
+
+💰 Nhận được:
+**${reward.toLocaleString()} xu**
+
+💳 Số dư hiện tại:
+**${users[id].coins.toLocaleString()} xu**
+
+━━━━━━━━━━━━━━━━━━━━━━━
+⏰ **Quay lại sau 3 ngày để mở tiếp nhé!** 🌟`
+
+});
+
+return;
+
+}
     // =====================
     // MUA HOÀNG TỬ
     // =====================
@@ -222,6 +334,7 @@ Bạn có chắc muốn mua role này không?`,
         }
 
         const id = interaction.user.id;
+   
 
         if (!users[id]) users[id] = { coins: 0 };
 
