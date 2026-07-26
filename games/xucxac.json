@@ -1,10 +1,6 @@
 {
-    "active": true,
-    "owner": "1383057878725693580",
-    "players": [
-        {
-            "id": "1383057878725693580",
-            "name": "wbrownm._"
-        }
-    ]
+    "active": false,
+    "owner": "1517200026919506002",
+    "players": {},
+    "startedAt": 1785063834107
 }

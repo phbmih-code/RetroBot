@@ -1,6 +1,13 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+    SlashCommandBuilder,
+    EmbedBuilder
+} = require("discord.js");
+
 const fs = require("fs");
 const path = require("path");
+
+const gameFile = path.join(__dirname, "..", "games", "xucxac.json");
+const usersFile = path.join(__dirname, "..", "data", "users.json");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,18 +16,16 @@ module.exports = {
 
     async execute(interaction) {
 
-        const file = path.join(__dirname, "..", "games", "xucxac.json");
-
         let game = {
-            active: false
+            active: false,
+            players: {}
         };
 
-        if (fs.existsSync(file)) {
+        if (fs.existsSync(gameFile)) {
             game = JSON.parse(
-                fs.readFileSync(file, "utf8")
+                fs.readFileSync(gameFile, "utf8")
             );
         }
-
 
         if (game.active) {
             return interaction.reply({
@@ -29,69 +34,146 @@ module.exports = {
             });
         }
 
-
         game = {
             active: true,
             owner: interaction.user.id,
-            players: [],
-            createdAt: Date.now()
+            players: {},
+            startedAt: Date.now()
         };
 
-
         fs.writeFileSync(
-            file,
+            gameFile,
             JSON.stringify(game, null, 4)
         );
 
-
         const embed = new EmbedBuilder()
+            .setColor("Blue")
             .setTitle("🎲 XÚC XẮC")
             .setDescription(
 `🎮 **Một ván xúc xắc mới đã bắt đầu!**
 
-👤 Người tạo: ${interaction.user}
+👤 Chủ phòng: ${interaction.user}
 
-⏰ Thời gian tham gia: **60 giây**
+⏰ Thời gian: **60 giây**
 
-Dùng \`/lac\` để tham gia lắc xúc xắc!`
-            )
-            .setColor("Blue");
+👉 Dùng \`/lac\` để tham gia!
 
+🏆 Người cao điểm nhất sẽ nhận **2000 xu**.
+🤝 Nếu hòa sẽ chia đều tiền thưởng.`
+            );
 
         await interaction.reply({
             embeds: [embed]
         });
 
-
-
-        // Tự kết thúc sau 60 giây
         setTimeout(() => {
-
-            if (!fs.existsSync(file)) return;
-
+                        if (!fs.existsSync(gameFile)) return;
 
             let current = JSON.parse(
-                fs.readFileSync(file, "utf8")
+                fs.readFileSync(gameFile, "utf8")
             );
 
+            if (!current.active) return;
 
-            if (current.active) {
+            const players = current.players;
+
+            const ids = Object.keys(players);
+
+            if (ids.length === 0) {
 
                 current.active = false;
-                current.endedAt = Date.now();
-
+                current.players = {};
 
                 fs.writeFileSync(
-                    file,
+                    gameFile,
                     JSON.stringify(current, null, 4)
                 );
 
+                if (interaction.channel) {
+    interaction.channel.send(
+        "⏰ Hết thời gian!\n❌ Không có ai tham gia nên ván đã hủy."
+    ).catch(console.error);
+}
 
-                console.log("🎲 Ván xúc xắc đã kết thúc sau 60 giây");
+                return;
             }
 
+            let max = 0;
+
+            for (const id of ids) {
+                if (players[id] > max) {
+                    max = players[id];
+                }
+            }
+
+            const winners = ids.filter(
+                id => players[id] === max
+            );
+
+            let users = {};
+
+            if (fs.existsSync(usersFile)) {
+                users = JSON.parse(
+                    fs.readFileSync(usersFile, "utf8")
+                );
+            }
+
+            const reward = Math.floor(2000 / winners.length);
+
+            for (const id of winners) {
+
+                if (!users[id]) {
+                    users[id] = {
+                        coins: 0
+                    };
+                }
+
+                users[id].coins += reward;
+
+            }
+
+            fs.writeFileSync(
+                usersFile,
+                JSON.stringify(users, null, 4)
+            );
+
+            current.active = false;
+            current.players = {};
+
+            fs.writeFileSync(
+                gameFile,
+                JSON.stringify(current, null, 4)
+            );
+
+            let result =
+`🎲 **VÁN XÚC XẮC ĐÃ KẾT THÚC!**
+
+🏆 Điểm cao nhất: **${max}**
+
+`;
+            if (winners.length === 1) {
+
+                result += `👑 Người thắng: <@${winners[0]}>\n`;
+                result += `💰 Nhận: **2000 xu**`;
+
+            } else {
+
+                result += `🤝 Có ${winners.length} người hòa!\n\n`;
+
+                for (const id of winners) {
+                    result += `👤 <@${id}> nhận **${reward} xu**\n`;
+                }
+
+            }
+
+            if (interaction.channel) {
+    interaction.channel.send(result).catch(console.error);
+}
+
+            console.log("🎲 Ván xúc xắc kết thúc.");
 
         }, 60000);
 
     }
+
 };

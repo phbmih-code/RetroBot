@@ -50,41 +50,35 @@ client.on(Events.InteractionCreate, async interaction => {
     // SLASH COMMAND
     // =====================
 
-    if (interaction.isChatInputCommand()) {
-
-        const command = client.commands.get(interaction.commandName);
-
-        if (!command) return;
 
 
-        try {
+        if (interaction.isChatInputCommand()) {
 
-            await command.execute(interaction);
+    const command = client.commands.get(interaction.commandName);
 
-        } catch (error) {
+    if (!command) return;
 
-            console.error(error);
+    try {
 
-            if (interaction.replied || interaction.deferred) {
+        await command.execute(interaction);
 
-                await interaction.followUp({
-                    content: "❌ Có lỗi khi chạy lệnh!",
-                    ephemeral: true
-                });
+    } catch (error) {
 
-            } else {
+        console.error(error);
 
-                await interaction.reply({
-                    content: "❌ Có lỗi khi chạy lệnh!",
-                    ephemeral: true
-                });
+        if (!interaction.replied && !interaction.deferred) {
 
-            }
+            await interaction.reply({
+                content: "❌ Có lỗi khi chạy lệnh!",
+                ephemeral: true
+            }).catch(() => {});
 
         }
 
-        return;
     }
+
+    return;
+}
 
 
 
