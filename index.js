@@ -389,8 +389,6 @@ Bạn có chắc muốn mua role này không?`,
 
 console.log("Bot đang khởi động...");
 
-client.login(process.env.TOKEN);
-
 app.get("/", (req, res) => {
     res.send("PreBot is running!");
 });
@@ -400,3 +398,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Web server đang chạy ở cổng ${PORT}`);
 });
+
+client.login(process.env.TOKEN);
