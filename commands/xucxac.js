@@ -182,14 +182,7 @@ module.exports = {
 
 
 
-                current.active = false;
-                current.players = {};
-
-                fs.writeFileSync(
-                    gameFile,
-                    JSON.stringify(current, null, 4)
-                );
-
+                
 
 
                 let msg =
@@ -238,10 +231,17 @@ if (channel) {
     await channel.send(msg);
 }
 
+// THÊM ĐOẠN NÀY
+current.active = false;
+current.owner = "";
+current.players = {};
 
-                console.log(
-                    "🎲 Xúc xắc đã kết thúc"
-                );
+fs.writeFileSync(
+    gameFile,
+    JSON.stringify(current, null, 4)
+);
+
+console.log("🎲 Đã reset ván xúc xắc");
 
 
             } catch (err) {
