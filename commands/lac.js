@@ -2,28 +2,14 @@ const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
-const gameFile = path.join(
-    __dirname,
-    "..",
-    "games",
-    "xucxac.json"
-);
+const gameFile = path.join(__dirname, "..", "games", "xucxac.json");
 
 module.exports = {
-
     data: new SlashCommandBuilder()
         .setName("lac")
         .setDescription("Lắc xúc xắc"),
 
     async execute(interaction) {
-
-        const file = path.join(
-            __dirname,
-            "..",
-            "games",
-            "xucxac.json"
-        );
-
 
         if (!fs.existsSync(gameFile)) {
             return interaction.reply({
@@ -32,11 +18,9 @@ module.exports = {
             });
         }
 
+        let game = JSON.parse(fs.readFileSync(gameFile, "utf8"));
 
-        let game = JSON.parse(
-            fs.readFileSync(file, "utf8")
-        );
-
+        console.log("LAC:", game);
 
         if (!game.active) {
             return interaction.reply({
@@ -45,37 +29,24 @@ module.exports = {
             });
         }
 
-
         const id = interaction.user.id;
 
-
         if (game.players[id]) {
-
             return interaction.reply({
                 content: "🎲 Bạn đã lắc rồi!",
                 ephemeral: true
             });
-
         }
 
-
-        const roll =
-            Math.floor(Math.random() * 6) + 1;
-
+        const roll = Math.floor(Math.random() * 6) + 1;
 
         game.players[id] = roll;
 
-
-        fs.writeFileSync(
-            file,
-            JSON.stringify(game, null, 4)
-        );
-
+        fs.writeFileSync(gameFile, JSON.stringify(game, null, 4));
+        console.log("LAC:", game);
 
         return interaction.reply(
             `🎲 <@${id}> đã lắc được **${roll} điểm**!`
         );
-
     }
-
 };

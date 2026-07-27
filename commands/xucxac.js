@@ -61,6 +61,7 @@ module.exports = {
             gameFile,
             JSON.stringify(game, null, 4)
         );
+        console.log("XUCCAC:", game);
 
 
         const embed = new EmbedBuilder()
@@ -89,6 +90,7 @@ module.exports = {
 
 
         setTimeout(async () => {
+            console.log("⏰ Timeout chạy");
 
             try {
 
@@ -230,7 +232,11 @@ module.exports = {
 
 
 
-                await interaction.channel.send(msg);
+                const channel = await interaction.client.channels.fetch(interaction.channelId);
+
+if (channel) {
+    await channel.send(msg);
+}
 
 
                 console.log(
